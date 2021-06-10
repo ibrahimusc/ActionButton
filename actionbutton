@@ -26,7 +26,7 @@ class Mill(models.Model):
     # the bellow three fields related to bellow api to show sum af record fist save the sum in this field
     net_weight_mton = fields.Float(string='Net Weight MTon', compute="_compute_total_mton_qty")
     fresh_allocation_record = fields.Float(string='Fresh Allocation', compute="_compute_total_fresh_allocation")
-    atta_deliver_store_record = fields.Float(string='Atta Deliver To Store', compute="_compute_total_atta_deliver")
+ 
 
     # This api for Fresh Allocation to show it in mill all QMton
     @api.depends('mill_fresh_allocation')
@@ -45,15 +45,6 @@ class Mill(models.Model):
             if rec.mill_ctms:
                 total = sum(val.net_weight for val in rec.mill_ctms)
             rec.net_weight_mton = total
-
-    #this api are used to take all number of bag field sum and show it in mill
-    # @api.depends('mill_atta_delver_store')
-    # def _compute_total_atta_deliver(self):
-    #     for rec in self:
-    #         total = 0.00
-    #         if rec.mill_atta_delver_store:
-    #             total = sum(val.number_of_bags for val in rec.mill_atta_delver_store)
-    #         rec.atta_deliver_store_record = total
 
     # api.onchange are used to change the zone record the related region will be show
     @api.onchange('zone_id')
