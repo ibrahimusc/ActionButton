@@ -1,0 +1,62 @@
+from odoo import models, fields, api, _
+
+
+class Mill(models.Model):
+    _name = 'pds.mills'
+    _description = "Location's Records"
+    _rec_name = 'mill_name'
+    _inherit = ['mail.thread', 'mail.activity.mixin']
+    # zone and region field come from zaib_allocation module to show it in dropdown
+    # and remine field are simple field and related to mill
+    mill_name = fields.Char(string="Mill Name")
+    contact = fields.Char(string="Contact", tracking=True)
+    street = fields.Text(string="Street", tracking=True)
+    email = fields.Char(string="Email", tracking=True)
+    zone_id = fields.Many2many('zaib.location', string='Zone', tracking=True)
+    region_id = fields.Many2many('zaib.location', 'region_id', string='Region', tracking=True)
+    status = fields.Selection([
+        ('qulified', 'Qulified'),
+        ('non qulified', 'Non Qulified'),
+    ], string="Status", )
+
+    mill_atta_delver_store = fields.One2many('atta.deliver.stores', "mill", string='Atta Deliver To Store')
+    mill_ctms = fields.One2many('pds.ctms', "mills", string='CTMS')
+    mill_fresh_allocation = fields.One2many('fresh.allocation', "mill", string='Fresh Allocation')
+
+    # the bellow three fields related to bellow api to show sum af record fist save the sum in this field
+    net_weight_mton = fields.Float(string='Net Weight MTon', compute="_compute_total_mton_qty")
+    fresh_allocation_record = fields.Float(string='Fresh Allocation', compute="_compute_total_fresh_allocation")
+    atta_deliver_store_record = fields.Float(string='Atta Deliver To Store', compute="_compute_total_atta_deliver")
+
+    # This api for Fresh Allocation to show it in mill all QMton
+    @api.depends('mill_fresh_allocation')
+    def _compute_total_fresh_allocation(self):
+        for rec in self:
+            total = 0.00
+            if rec.mill_fresh_allocation:
+                total = sum(val.quantity_in_mton for val in rec.mill_fresh_allocation)
+            rec.fresh_allocation_record = total
+
+    #this api are used to take all sum of net_weight field recor and show it in Mill
+    @api.depends('mill_ctms')
+    def _compute_total_mton_qty(self):
+        for rec in self:
+            total = 0.00
+            if rec.mill_ctms:
+                total = sum(val.net_weight for val in rec.mill_ctms)
+            rec.net_weight_mton = total
+
+    #this api are used to take all number of bag field sum and show it in mill
+    # @api.depends('mill_atta_delver_store')
+    # def _compute_total_atta_deliver(self):
+    #     for rec in self:
+    #         total = 0.00
+    #         if rec.mill_atta_delver_store:
+    #             total = sum(val.number_of_bags for val in rec.mill_atta_delver_store)
+    #         rec.atta_deliver_store_record = total
+
+    # api.onchange are used to change the zone record the related region will be show
+    @api.onchange('zone_id')
+    def _zone_onchange(self):
+        for rec in self:
+            rec.region_id = None
